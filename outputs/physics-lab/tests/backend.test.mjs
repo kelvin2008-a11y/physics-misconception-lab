@@ -102,12 +102,12 @@ test('configured build pins CSP origin and excludes backend/environment files',a
  const {spawnSync}=await import('node:child_process');
  const dir=await mkdtemp(join(tmpdir(),'physics-build-'));t.after(()=>rm(dir,{recursive:true,force:true}));
  const root=new URL('../',import.meta.url);
- for(const name of ['scripts.mjs','index.html','assets'])await cp(new URL(name,root),join(dir,name),{recursive:true});
+ for(const name of ['scripts.mjs','index.html','assets','bgg-gini'])await cp(new URL(name,root),join(dir,name),{recursive:true});
  await writeFile(join(dir,'assets/config.mjs'),"export const DEFAULT_API_KEY='';export const BACKEND_URL='https://shared.example';");
  const run=spawnSync(process.execPath,[join(dir,'scripts.mjs'),'build'],{encoding:'utf8'});assert.equal(run.status,0,run.stderr);
  const html=await readFile(join(dir,'dist/index.html'),'utf8');
  assert.ok(html.includes("connect-src 'self' https://api.openai.com https://shared.example;"));
- assert.deepEqual((await readdir(join(dir,'dist'))).sort(),['assets','index.html']);
+ assert.deepEqual((await readdir(join(dir,'dist'))).sort(),['assets','bgg-gini','index.html']);
  const config=await readFile(new URL('../assets/config.mjs',import.meta.url),'utf8');assert.match(config,/DEFAULT_API_KEY = ''/);
  const server=await readFile(new URL('../server/server.mjs',import.meta.url),'utf8');
  assert.doesNotMatch(server,/console\.(log|debug|info)|writeFile|appendFile|createWriteStream/);

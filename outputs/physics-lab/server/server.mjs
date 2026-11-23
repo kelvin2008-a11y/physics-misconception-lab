@@ -1,3 +1,4 @@
+import {validateBgg,bggRequest,parseBgg} from './bgg.mjs';
 import {createServer} from 'node:http';
 import {pathToFileURL} from 'node:url';
 import {buildRequest,parseResponse,validateEvidence} from '../assets/core.mjs';
@@ -41,7 +42,8 @@ export function createDiagnosisServer({apiKey=process.env.OPENAI_API_KEY,allowed
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
   const send=(status,data)=>{if(!res.destroyed&&!res.writableEnded){res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(data));}};
   if(req.url==='/healthz'&&req.method==='GET'){send(200,{ok:true});return;}
-  if(req.url!=='/api/diagnose'){send(404,{error:'Not found'});return;}
+  const isBgg=req.url==='/api/bgg-recommend';
+  if(req.url!=='/api/diagnose'&&!isBgg){send(404,{error:'Not found'});return;}
   if(req.headers.origin!==allowedOrigin){send(403,{error:'Origin rejected'});return;}
   res.setHeader('Access-Control-Allow-Origin',allowedOrigin);res.setHeader('Vary','Origin');
   if(req.method==='OPTIONS'){
@@ -50,7 +52,8 @@ export function createDiagnosisServer({apiKey=process.env.OPENAI_API_KEY,allowed
   }
   if(req.method!=='POST'){send(405,{error:'Method rejected'});return;}
   if(!/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(req.headers['content-type']||'')||req.headers['content-encoding']){send(415,{error:'JSON required'});return;}
-  if(Number(req.headers['content-length'])>bodyLimit){send(413,{error:'Input too large'});return;}
+  const routeLimit=isBgg?Math.min(bodyLimit,1024*1024):bodyLimit;
+  if(Number(req.headers['content-length'])>routeLimit){send(413,{error:'Input too large'});return;}
   const time=now();minute=minute.filter(t=>time-t<60000);day=day.filter(t=>time-t<86400000);
   if(active>=maxConcurrent||minute.length>=maxPerMinute||day.length>=maxPerDay){res.setHeader('Retry-After','60');send(429,{error:'Shared request limit reached'});return;}
   minute.push(time);day.push(time);active++;
@@ -59,13 +62,14 @@ export function createDiagnosisServer({apiKey=process.env.OPENAI_API_KEY,allowed
   const timer=setTimeout(()=>{controller.abort();send(504,{error:'Request timed out'});req.destroy();},requestTimeoutMs);
   let upstreamTimer;
   try{
-   const input=validateInput(await readBody(req,bodyLimit));clearTimeout(timer);
+   const input=(isBgg?validateBgg:validateInput)(await readBody(req,routeLimit));clearTimeout(timer);
    if(controller.signal.aborted)throw fail(504);
    upstreamTimer=setTimeout(()=>controller.abort(),timeoutMs);
-   const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+apiKey.trim()},body:JSON.stringify(buildRequest({...input,model:MODEL})),signal:controller.signal});
-   const result=parseResponse(await upstreamJSON(response));validateEvidence(result.diagnosis,input);
+   const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+apiKey.trim()},body:JSON.stringify(isBgg?bggRequest(input,MODEL):buildRequest({...input,model:MODEL})),signal:controller.signal});
+   const raw=await upstreamJSON(response);
+   const result=isBgg?parseBgg(raw,input):parseResponse(raw);if(!isBgg)validateEvidence(result.diagnosis,input);
    send(200,result);
-  }catch(e){const status=controller.signal.aborted?504:([400,401,403,413,429,502].includes(e.status)?e.status:502);send(status,{error:({400:'Invalid diagnosis input',401:'Shared API credential rejected',403:'Shared model access denied',413:'Input too large',429:'Shared request limit reached',502:'Diagnosis service unavailable',504:'Request timed out'})[status]});}
+  }catch(e){const status=controller.signal.aborted?504:([400,401,403,413,429,502].includes(e.status)?e.status:502);send(status,{error:({400:isBgg?'Invalid recommendation input':'Invalid diagnosis input',401:'Shared API credential rejected',403:'Shared model access denied',413:'Input too large',429:'Shared request limit reached',502:isBgg?'Recommendation service unavailable':'Diagnosis service unavailable',504:'Request timed out'})[status]});}
   finally{clearTimeout(timer);clearTimeout(upstreamTimer);active--;res.off('close',disconnected);}
  });
  server.requestTimeout=requestTimeoutMs;server.headersTimeout=Math.min(requestTimeoutMs,10000);server.timeout=requestTimeoutMs+timeoutMs;server.keepAliveTimeout=5000;server.maxRequestsPerSocket=20;

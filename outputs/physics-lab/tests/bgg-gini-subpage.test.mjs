@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,cp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {browser,root} from './helpers.mjs';
+test('built subpage navigation, assets and mobile return link',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'bgg-built-'));t.after(()=>rm(dir,{recursive:true,force:true}));
+ for(const file of ['scripts.mjs','index.html','assets','bgg-gini'])await cp(join(root,file),join(dir,file),{recursive:true});
+ const built=spawnSync(process.execPath,[join(dir,'scripts.mjs'),'build'],{encoding:'utf8'});assert.equal(built.status,0,built.stderr);
+ const {page}=await browser(t,{siteRoot:join(dir,'dist')});
+ await page.route('**/programs',r=>r.fulfill({status:502,json:{}}));
+ await page.locator('a[href="./bgg-gini/"]').click();
+ await page.locator('#guide-confirm').click();
+ await page.waitForFunction(()=>document.querySelectorAll('.card').length===94);
+ assert.ok(page.url().endsWith('/bgg-gini/'));
+ assert.equal(await page.locator('input[type=password]').count(),0);
+ await page.setViewportSize({width:390,height:844});
+ assert.equal(await page.getByRole('link',{name:'물리 다시보기',exact:true}).isVisible(),true);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:join(root,'verification/bgg-mobile.png'),fullPage:false});
+ await page.getByRole('link',{name:'물리 다시보기',exact:true}).click();
+ await page.waitForFunction(()=>document.title.includes('물리 다시보기'));
+});

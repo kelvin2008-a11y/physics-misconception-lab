@@ -10,10 +10,10 @@ export const valid=()=>structuredClone(demo);
 export const envelope=(d=valid())=>({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify(d)}]}],usage:{input_tokens:123,output_tokens:456,total_tokens:579}});
 export const input=()=>({problem:'책의 힘을 설명하세요.',solution:'중력과 수직항력은 작용·반작용이다.',rubric:'힘의 주체를 명시',images:[]});
 export const png='iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAADklEQVR4nGP4DwYMEAoAU7oL9ZisIGcAAAAASUVORK5CYII=';
-export async function browser(t){
+export async function browser(t,{siteRoot=root}={}){
  const require=createRequire(import.meta.url);let chromium;
  try{({chromium}=require('playwright'));}catch{({chromium}=require('/Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));}
- const server=createServer(async(req,res)=>{try{const rel=decodeURIComponent(req.url.split('?')[0]);if(!rel.startsWith('/physics-misconception-lab/'))throw Error();const path=resolve(root,rel.slice('/physics-misconception-lab/'.length)||'index.html');if(!path.startsWith(root+'/'))throw Error();const data=await readFile(path);res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.json':'application/json'})[extname(path)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404);res.end();}});
+ const server=createServer(async(req,res)=>{try{const rel=decodeURIComponent(req.url.split('?')[0]);if(!rel.startsWith('/physics-misconception-lab/'))throw Error();const path=resolve(siteRoot,rel.slice('/physics-misconception-lab/'.length)+(rel.endsWith('/')?'index.html':''));if(!path.startsWith(siteRoot+'/'))throw Error();const data=await readFile(path);res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.json':'application/json'})[extname(path)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404);res.end();}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  let b;try{b=await chromium.launch({headless:true});}catch(e){server.close();throw e;}
  const context=await b.newContext({acceptDownloads:true});const page=await context.newPage();page.setDefaultTimeout(10000);

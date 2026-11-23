@@ -12,5 +12,6 @@ if(process.argv[2]==='test'){
  let html=await readFile(join(root,'index.html'),'utf8');
  if(BACKEND_URL){const url=new URL(BACKEND_URL);if(!['http:','https:'].includes(url.protocol)||url.origin!==BACKEND_URL)throw Error('BACKEND_URL must be an exact origin');html=html.replace("connect-src 'self' https://api.openai.com","connect-src 'self' https://api.openai.com "+url.origin);}
  await writeFile(join(out,'index.html'),html);await cp(join(root,'assets'),join(out,'assets'),{recursive:true});
+ await cp(join(root,'bgg-gini'),join(out,'bgg-gini'),{recursive:true});
  console.log('Built static app assets only: outputs/physics-lab/dist');
 }else{console.error('Usage: node scripts.mjs test|build');process.exit(1);}
