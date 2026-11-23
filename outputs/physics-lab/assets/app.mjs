@@ -1,3 +1,4 @@
+import {DEFAULT_API_KEY} from './config.mjs';
 import {initMemory} from './memory.mjs';
 import {checkFiles,prepareImage,requestDiagnosis,demo,exportReport,redact,redactTree} from './core.mjs';
 const $=id=>document.getElementById(id);
@@ -55,3 +56,6 @@ $('load-case').onclick=()=>{const c=visibleCases[Number($('case-select').value)]
 fetch(new URL('./cases.json',import.meta.url)).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{library=data;for(const [i,p] of library.presets.entries()){const o=node('option',`과제 ${p.homework} · ${p.question_number}번`);o.value=i;$('preset').append(o);}filterCases();}).catch(()=>{$('case-detail').textContent='합성 자료를 불러오지 못했습니다. 페이지를 다시 열어 주세요.';$('load-case').disabled=true;});
 
 const learningMemory=initMemory({getKey:()=>$('api-key').value,getDraft:()=>diagnosis?{topic:$('problem').value.trim()||diagnosis.transcription,correction:$('review-status').value==='corrected'?$('review-correction').value:diagnosis.referenceSolution}:null,setStatus:status});
+
+// Set the configured default only on initial page load.
+document.getElementById("api-key").value=DEFAULT_API_KEY;
