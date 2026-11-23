@@ -1,7 +1,7 @@
 import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import {createDiagnosisServer,MODEL,validateInput} from '../server/server.mjs';
+import {createDiagnosisServer,MODEL,physicsRequest,validateInput} from '../server/server.mjs';
 import {instructions,schema,requestDiagnosis} from '../assets/core.mjs';
 import {input,envelope,png,browser,until} from './helpers.mjs';
 const origin='https://school.example';
@@ -21,7 +21,7 @@ test('HTTP fixed contract, images, retry, no secrets in output',async t=>{
   assert.ok(!(await r.text()).includes('test-server-secret'));
   const call=calls.at(-1),request=JSON.parse(call.body);
   assert.equal(call.url,'https://api.openai.com/v1/responses');assert.equal(call.headers.Authorization,'Bearer test-server-secret');
-  assert.equal(request.model,MODEL);assert.equal(request.instructions,instructions);assert.deepEqual(request.text.format.schema,schema);assert.equal(request.store,false);
+  assert.equal(request.model,MODEL);assert.equal(request.instructions,physicsRequest(input()).instructions);assert.deepEqual(request.reasoning,{effort:'high'});assert.equal(request.max_output_tokens,16000);assert.deepEqual(request.text.format.schema,schema);assert.equal(request.store,false);
  }
  assert.equal(JSON.parse(calls[1].body).input[0].content[2].type,'input_image');
 });

@@ -81,3 +81,8 @@ Node 22 전용 무의존성 HTTP 서버는 `server/server.mjs`입니다. 저장�
 ## 비교과지니 출처
 
 비교과지니 하위 페이지는 [원본 bgg-gini의 dist/index.html](https://github.com/kelvin2008-a11y/bgg-gini/blob/916f040fbbae9866e8d2eb15cc1309056c1291d6/dist/index.html)을 통합했습니다. 원본 커밋: `916f040fbbae9866e8d2eb15cc1309056c1291d6`. 원본 프로그램 목록 갱신은 유지하고, AI 추천만 같은 Render 서버의 `/api/bgg-recommend`에서 OpenAI로 처리합니다. 두 AI 경로는 공용 요청 한도를 함께 사용합니다.
+
+## 물리 심층 분석 (2026-11-23)
+공용 물리 분석은 GPT-6.2 Astra, reasoning effort high, 추론 포함 최대 출력 16,000토큰, 최대 대기 240초를 사용합니다. 비교과지니는 GPT-6.1 Terra를 유지합니다. 완성된 응답의 토큰 수로 입력 $8/백만·출력 $40/백만 기준 예상 비용을 표시합니다(캐시 할인 제외). 월 $27은 계획 예산이며 서버의 월별 결제 차단 기능은 아닙니다. 실제 청구는 OpenAI 사용량 화면을 기준으로 합니다. 사진·추론 토큰, 실패/취소된 요청에도 비용이 발생할 수 있습니다. 자동 재시도나 저가 모델로의 자동 전환은 없습니다.
+공식 모델: https://developers.openai.com/api/docs/models/gpt-6.2-astra
+공식 요금: https://developers.openai.com/api/docs/pricing

@@ -3,7 +3,12 @@ import {createServer} from 'node:http';
 import {pathToFileURL} from 'node:url';
 import {buildRequest,parseResponse,validateEvidence} from '../assets/core.mjs';
 
-export const MODEL='gpt-6.1-terra';
+export const MODEL='gpt-6.2-astra';
+export const BGG_MODEL='gpt-6.1-terra';
+export function physicsRequest(input){
+ const request=buildRequest({...input,model:MODEL});
+ return {...request,reasoning:{effort:'high'},max_output_tokens:16000,instructions:request.instructions+' 심층 분석: 문제의 조건과 좌표계, 적용 가능한 물리 법칙을 먼저 확인하고 각 풀이 단계의 식, 부호, 단위, 벡터 방향을 점검한다. 계산 결과는 대입, 차원 분석, 극한 또는 독립적인 풀이로 가능한 범위에서 검산한다. 보존법칙의 성립 조건과 계의 경계를 확인한다. 오류의 최초 발생 지점과 이후에 전파된 오류를 구분한다. 오류 설명에는 학생이 이해할 수 있는 핵심 근거를, 교정에는 올바른 식과 적용 조건을 제시한다. 완전한 풀이에는 가정, 주요 식, 계산, 단위가 있는 결론과 검산을 포함한다. 원문에 없는 실수를 만들지 말고 단순 서술 생략을 개념 오류로 단정하지 않는다.'};
+}
 export const BODY_LIMIT=36*1024*1024;
 const fail=status=>Object.assign(new Error('Request rejected'),{status});
 const object=(v,keys)=>v && typeof v==='object' && !Array.isArray(v) && Object.keys(v).every(k=>keys.includes(k));
@@ -33,7 +38,7 @@ async function upstreamJSON(response){
  for await(const chunk of response.body){size+=chunk.length;if(size>1024*1024)throw fail(502);chunks.push(chunk);}
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
-export function createDiagnosisServer({apiKey=process.env.OPENAI_API_KEY,allowedOrigin=process.env.ALLOWED_ORIGIN,fetcher=fetch,bodyLimit=BODY_LIMIT,timeoutMs=45000,requestTimeoutMs=15000,maxConcurrent=2,maxPerMinute=6,maxPerDay=100,now=Date.now}={}){
+export function createDiagnosisServer({apiKey=process.env.OPENAI_API_KEY,allowedOrigin=process.env.ALLOWED_ORIGIN,fetcher=fetch,bodyLimit=BODY_LIMIT,timeoutMs=240000,requestTimeoutMs=15000,maxConcurrent=2,maxPerMinute=6,maxPerDay=100,now=Date.now}={}){
  if(!apiKey?.trim())throw Error('OPENAI_API_KEY is required');
  let origin;try{origin=new URL(allowedOrigin);}catch{throw Error('ALLOWED_ORIGIN must be an exact origin');}
  if(!['http:','https:'].includes(origin.protocol)||origin.origin!==allowedOrigin)throw Error('ALLOWED_ORIGIN must be an exact origin');
@@ -64,11 +69,11 @@ export function createDiagnosisServer({apiKey=process.env.OPENAI_API_KEY,allowed
   try{
    const input=(isBgg?validateBgg:validateInput)(await readBody(req,routeLimit));clearTimeout(timer);
    if(controller.signal.aborted)throw fail(504);
-   upstreamTimer=setTimeout(()=>controller.abort(),timeoutMs);
-   const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+apiKey.trim()},body:JSON.stringify(isBgg?bggRequest(input,MODEL):buildRequest({...input,model:MODEL})),signal:controller.signal});
+   upstreamTimer=setTimeout(()=>controller.abort(),isBgg?Math.min(timeoutMs,45000):timeoutMs);
+   const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+apiKey.trim()},body:JSON.stringify(isBgg?bggRequest(input,BGG_MODEL):physicsRequest(input)),signal:controller.signal});
    const raw=await upstreamJSON(response);
    const result=isBgg?parseBgg(raw,input):parseResponse(raw);if(!isBgg)validateEvidence(result.diagnosis,input);
-   send(200,result);
+   send(200,isBgg?result:{...result,analysis:{model:MODEL,reasoning:'high',estimatedCostUsd:result.usage?(result.usage.input_tokens*8+result.usage.output_tokens*40)/1e6:null}});
   }catch(e){const status=controller.signal.aborted?504:([400,401,403,413,429,502].includes(e.status)?e.status:502);send(status,{error:({400:isBgg?'Invalid recommendation input':'Invalid diagnosis input',401:'Shared API credential rejected',403:'Shared model access denied',413:'Input too large',429:'Shared request limit reached',502:isBgg?'Recommendation service unavailable':'Diagnosis service unavailable',504:'Request timed out'})[status]});}
   finally{clearTimeout(timer);clearTimeout(upstreamTimer);active--;res.off('close',disconnected);}
  });

@@ -30,11 +30,12 @@ function drawDiagnosis(target,d){target.replaceChildren();target.append(node('h3
 function show(d,origin,usage=null){diagnosis=d;source=origin;hints=0;$('empty').hidden=true;$('result').hidden=false;$('source').textContent=origin;drawDiagnosis($('diagnosis'),d);if(usage)$('diagnosis').append(node('p',`실제 API 토큰: 입력 ${usage.input_tokens} · 출력 ${usage.output_tokens} · 합계 ${usage.total_tokens}`,'muted'));
  $('hints').replaceChildren();$('next-hint').textContent='첫 번째 힌트 보기';$('next-hint').disabled=false;$('reference').hidden=true;$('reference').textContent='';$('learning').hidden=d.status==='abstain';$('practice').hidden=d.status==='abstain';$('retry-question').textContent=d.retryQuestion;$('retry-answer').value='';$('retry-result').replaceChildren();$('review-panel').hidden=false;$('review-status').value='pending';$('review-correction').value='';clearExport();
 }
-async function run(retry=false){if(busy||processing)return;busy=true;controller=new AbortController();locks();status(retry?'재도전 답안을 확인하는 중입니다…':'풀이를 읽고 근거를 확인하는 중입니다…','loading');
+async function run(retry=false){if(busy||processing)return;busy=true;controller=new AbortController();locks();status(retry?'재도전 답안을 확인하는 중입니다…':'풀이를 심층 분석하고 검산하는 중입니다. 수 분 걸릴 수 있습니다…','loading');
  try{let input;if(retry){if(!diagnosis||!$('retry-answer').value.trim())throw Error('재도전 답안을 입력해 주세요.');input={problem:diagnosis.retryQuestion,solution:$('retry-answer').value,images:[],retry:{question:diagnosis.retryQuestion},model:$('model').value};$('retry-result').replaceChildren();}else{resetResult();input={problem:$('problem').value,solution:$('solution').value,rubric:$('rubric').value,images:[...images],model:$('model').value};}
  input.rubric=(input.rubric||'')+learningMemory.context(input.problem);
- const {diagnosis:d,usage}=await requestDiagnosis(input,$('api-key').value,{signal:controller.signal,backendUrl:BACKEND_URL});
+ const {diagnosis:d,usage,analysis}=await requestDiagnosis(input,$('api-key').value,{signal:controller.signal,backendUrl:BACKEND_URL});
  if(retry){drawDiagnosis($('retry-result'),d);if(usage)$('retry-result').append(node('p',`실제 API 토큰 합계 ${usage.total_tokens}`));}else show(d,'개인 자료 · API 진단 (교사 확인 권장)',usage);
+ if(analysis?.model==='gpt-6.2-astra' && Number.isFinite(analysis.estimatedCostUsd))$(retry?'retry-result':'diagnosis').append(node('p',`GPT‑6.2 Astra · 심층 분석 · 이번 요청 예상 $${analysis.estimatedCostUsd.toFixed(4)} (캐시 할인 제외, 실제 청구와 다를 수 있음)`,'muted'));
  status(d.status==='abstain'?'자료가 부족하여 판단을 보류했습니다. 추가 자료를 확인해 주세요.':'분석을 마쳤습니다. 근거와 힌트를 확인하세요.','success');
  }catch(e){status(e.message,'error');if(retry)$('retry-result').replaceChildren(node('p',e.message));}finally{busy=false;controller=null;locks();}}
 $('retry-answer').oninput=()=>{$('retry-result').replaceChildren();};
