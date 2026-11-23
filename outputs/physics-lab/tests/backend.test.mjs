@@ -69,13 +69,13 @@ test('frontend chooses shared for blank key, direct for personal key',async()=>{
 test('browser blank key uses configured backend and retry',async t=>{
  const {page}=await browser(t);let calls=0;
  await page.route('**/assets/config.mjs',r=>r.fulfill({contentType:'text/javascript',body:"export const DEFAULT_API_KEY='';export const BACKEND_URL='https://shared.example';"}));
- await page.route('https://shared.example/api/diagnose',r=>{calls++;assert.equal(r.request().headers().authorization,undefined);const d=JSON.parse(envelope().output[0].content[0].text);const body=r.request().postDataJSON();d.findings=[];return r.fulfill({contentType:'application/json',body:JSON.stringify({diagnosis:d,usage:null})});});
+ await page.route('https://shared.example/api/diagnose',r=>{calls++;assert.equal(r.request().headers().authorization,undefined);const d=JSON.parse(envelope().output[0].content[0].text);const body=r.request().postDataJSON();d.findings=[];return r.fulfill({contentType:'application/json',body:JSON.stringify({diagnosis:d,usage:null,analysis:{model:MODEL,estimatedCostUsd:0.00663}})});});
  await page.route('**/physics-misconception-lab/',async r=>r.fulfill({contentType:'text/html',body:(await readFile(new URL('../index.html',import.meta.url),'utf8')).replace("connect-src 'self' https://api.openai.com","connect-src 'self' https://api.openai.com https://shared.example")}));
  await page.reload();await page.locator('#problem').fill(input().problem);await page.locator('#solution').fill(input().solution);
  await page.locator('#analyze').click();await page.locator('#retry-answer').waitFor({state:'visible'});
  await page.locator('#retry-answer').fill('새 답안');await page.locator('#recheck').click();
  await page.waitForFunction(()=>document.querySelector('#recheck').disabled===false);
- assert.equal(calls,2);
+ assert.equal(calls,2);assert.match(await page.locator('#diagnosis').innerText(),/gpt-6.1-terra.*0.0066/);assert.match(await page.locator('#retry-result').innerText(),/gpt-6.1-terra.*0.0066/);
 });
 test('chunked body limit and upload timeout enforced over HTTP',async t=>{
  const {request}=await import('node:http');
