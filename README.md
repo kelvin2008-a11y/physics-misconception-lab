@@ -4,15 +4,18 @@
 
 ## 실행과 검증
 
-저장소 루트에서 (이 작업 환경의 번들 Node):
+Node 22 이상에서 다음 명령을 실행합니다.
 
 ```sh
-/Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node outputs/physics-lab/scripts.mjs test
-/Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node outputs/physics-lab/scripts.mjs build
-python3 -m http.server 8080 --directory outputs/physics-lab/dist
+cd outputs/physics-lab
+npm install
+npx playwright install chromium
+npm test
+npm run build
+python3 -m http.server 8080 --directory dist
 ```
 
-일반 환경은 Node 22 이상에서 `cd outputs/physics-lab`, `npm install`, `npx playwright install chromium`, `npm test`, `npm run build`를 사용합니다. 테스트는 로컬 Playwright를 우선 사용하고 이 환경의 번들 Playwright로 대체합니다. 런타임 의존성이나 외부 스크립트는 없습니다. 로컬 HTTP 서버는 개발 확인용이며 운영 서버는 필요하지 않습니다. ES module 때문에 file:// 열기는 지원하지 않습니다.
+런타임 의존성이나 외부 스크립트는 없습니다. 로컬 HTTP 서버는 개발 확인용이며 운영 서버는 필요하지 않습니다. ES module 때문에 file:// 열기는 지원하지 않습니다.
 
 ## 학습 흐름
 
@@ -35,11 +38,13 @@ API 없이 동작하는 **합성 데모**는 실제 업로드 진단이 아닙�
 
 2026-11-23 확인: [이미지 입력](https://developers.openai.com/api/docs/guides/images-vision), [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [GPT-6.1 Terra](https://developers.openai.com/api/docs/models/gpt-6.1-terra). 직접 POST `/v1/responses`, `input_text`/`input_image`와 data URL, `detail:high`, `text.format`의 strict JSON Schema를 사용합니다. 완료·거절·미완료를 구별하고 추가 키/누락/잘못된 타입 및 근거 없는 진단을 검증합니다. 실제 응답의 토큰만 표시하며 가격은 추정하지 않습니다.
 
-## GitHub Pages 인계
+## GitHub Pages 배포
 
-모든 자산은 상대 경로이며 `/physics-misconception-lab/` 경로에서 테스트합니다. `build`는 `dist`에 index와 assets만 복사합니다. 테스트·Seed·원본 자료는 배포되지 않습니다. 저장소 루트 `.github/workflows/pages.yml`은 수동 실행 전용입니다. 앱 폴더에도 인계용 사본이 있으며 저장소 구조를 유지하여 루트에 배치하세요. Pages source를 GitHub Actions로 설정한 뒤 부모 작업자가 게시합니다. 이 작업은 push/deploy/workflow 실행을 하지 않습니다.
+[사이트 열기](https://kelvin2008-a11y.github.io/physics-misconception-lab/)
 
-`corrected.seed.yaml`은 원래 열 개 AC의 전체 기능 범위를 유지하고 각 실행 테스트 파일을 해당 `expected_artifacts`에 정확히 선언했습니다. `tests/helpers.mjs`, `scripts.mjs`도 선언했습니다. 미해결 교육 수준/잘린 테스트/유료 키 검증 가정은 제거했습니다. 브라우저 스크린샷과 검증 기록은 `verification/`에 있으며 앱 번들에는 포함되지 않습니다.
+모든 자산은 상대 경로이며 `/physics-misconception-lab/` 경로에서 테스트합니다. `build`는 `dist`에 index와 assets만 복사합니다. 테스트·명세·원본 자료는 사이트에 배포되지 않습니다. 소스를 수정한 뒤 저장소 Actions에서 Pages 워크플로를 수동 실행하면 새 버전을 배포합니다.
+
+38개 자동 테스트가 통과했습니다. API 응답은 테스트용 모의 응답이며 실제 유료 API 진단의 정확성을 검증한 것은 아닙니다.
 
 ## 사진에서 확인한 교정 사례 기억하기
 
