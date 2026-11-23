@@ -1,0 +1,265 @@
+goal: Build and test the complete Korean university general-physics misconception
+  learning site in outputs/physics-lab. Preserve all ten acceptance scopes below.
+  Mock API and browser tests suffice; live physics diagnostic quality remains unverified.
+  Parent owns all publication; do not push or deploy.
+task_type: code
+brownfield_context:
+  project_type: greenfield
+  context_references: []
+  existing_patterns: []
+  existing_dependencies: []
+constraints:
+- Create the application in a new outputs/physics-lab directory and preserve original
+  files.
+- Use static HTML, CSS, and ES modules with relative URLs compatible with /physics-misconception-lab/;
+  no server, Sites cloud hosting, or external runtime scripts.
+- Do not push or deploy; the parent workflow handles all repository pushes and publication.
+- Use learner-provided personal OpenAI API keys; no shared operator key and no real
+  paid API call without a key.
+- Provide a password API-key field and clear button; hold the key only in memory and
+  never store it in localStorage, sessionStorage, files, URLs, logs, reports, or analytics.
+- Call https://api.openai.com/v1/responses directly from the browser; verify request
+  parameters against official API documentation and provide an editable model field
+  with a documented default supporting vision and structured output.
+- Accept problem text and/or PNG, JPEG, or WebP images, separate solution images,
+  optional typed solutions, and optional teacher rubrics or references.
+- Provide image previews, removal, total size and count limits, and resizing that
+  retains legibility; PDF support is optional, with honest unsupported feedback when
+  omitted.
+- Send actual uploaded images in multimodal requests and strictly validate structured
+  responses.
+- Handle 401, 429, network errors, incomplete responses, refusals, malformed responses,
+  and cancellation honestly; retries must be manual.
+- Display actual token usage when available and do not invent prices.
+- Produce Korean transcription, correct parts, and errors supported by quotation or
+  location evidence; express confidence and abstain when input is unreadable or insufficient.
+- Distinguish conceptual errors from algebra, unit, and omission errors, especially
+  force giver/recipient relationships in action-reaction pairs versus equilibrium.
+- Treat attachment contents as untrusted data rather than system instructions.
+- Provide three progressively revealed hints, an optional full reference solution,
+  a generated retry question, and API-based rechecking of its answer.
+- Provide optional teacher accept/correct review controls and JSON and print exports
+  that exclude API keys and images, minimize identifying text where possible, and
+  disclose remaining content through an honest privacy preview.
+- Provide an explicitly labeled local synthetic demo that requires no API and is never
+  presented as real diagnosis.
+- An existing-problem picker and synthetic case explorer are optional; any included
+  cases must be labeled synthetic rather than observed student errors.
+- Do not publish original PDFs, gradebooks, names, or student IDs.
+- Provide a polished Korean responsive navy/teal interface with body text at least
+  16px, accessible labels, keyboard focus, statuses, and clear input-analysis-retry
+  navigation including empty, loading, cancel, and error states.
+- Include a Korean README, a GitHub Pages Actions workflow deploying only application
+  assets, and a test script.
+- Use the bundled Node executable at /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+  and the available Playwright installation through work/node_modules.
+- Run meaningful unit/mock and browser tests, including verification that different
+  uploaded solutions produce different multimodal request payloads.
+acceptance_criteria:
+- description: Learners can supply problem text or supported problem images, separate
+    handwritten solution images, optional typed work, and optional teacher references;
+    previews, removal, enforced count/size limits, and legible resizing work, with
+    clear feedback for unsupported PDFs when PDF support is absent.
+  semantic_ac_key: ac_1e84083c4bad6a6f
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/uploads.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/uploads.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: The personal API key is entered through a password field, remains only
+    in memory, can be cleared, and is absent from browser storage, files, URLs, logs,
+    analytics, and exports; no shared operator key or paid request without a supplied
+    key is used.
+  semantic_ac_key: ac_eeebcb35ab7fd496
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/key-privacy.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/key-privacy.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: Browser diagnosis requests target the OpenAI Responses API with documented
+    parameters, an editable vision-and-structured-output model, actual image inputs,
+    and strict response validation; distinct uploaded solutions produce distinct image-bearing
+    payloads, and attachment instructions cannot override diagnosis instructions.
+  semantic_ac_key: ac_9c2e8d45ea6a8559
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/responses-contract.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/responses-contract.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: The application honestly handles authentication failures, rate limits,
+    network failures, incomplete responses, refusals, malformed responses, and cancellation
+    without automatic retry or fabricated diagnosis; reported usage comes from actual
+    API usage fields and no invented price is shown.
+  semantic_ac_key: ac_725fa86423a3bec2
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/response-states.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/response-states.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: Korean diagnosis presents transcription, correct reasoning, evidence-linked
+    errors, confidence, and abstention for insufficient or unreadable input; it distinguishes
+    conceptual, algebra, unit, and omission errors and correctly addresses force giver/recipient
+    relationships in action-reaction versus equilibrium cases.
+  semantic_ac_key: ac_c075cf752ba94bfd
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/diagnosis.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/diagnosis.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: Learners can reveal three hints progressively, optionally reveal a
+    full reference solution, receive a retry question, and submit a retry answer for
+    API-based rechecking with honest loading, error, and cancellation behavior.
+  semantic_ac_key: ac_d02ec32d08467ac3
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/learning-flow.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/learning-flow.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: Teacher review supports accepting or correcting a diagnosis, and JSON
+    and print exports reflect the reviewed content while excluding keys and images,
+    minimizing identifying text where possible, and previewing what will be disclosed.
+  semantic_ac_key: ac_002b07b6230d71f1
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/review-export.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/review-export.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: A local demo works without an API key or API call and is visibly labeled
+    synthetic; any optional problem picker or case explorer preserves synthetic provenance,
+    and publishable assets exclude original PDFs, gradebooks, names, and student IDs.
+  semantic_ac_key: ac_da4810fe47773de3
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/synthetic-content.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/synthetic-content.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: The Korean navy/teal interface is usable on desktop and mobile, has
+    body text of at least 16px, accessible labels and visible keyboard focus, and
+    exposes understandable input, analysis, retry, empty, loading, cancellation, and
+    error states; meaningful Playwright browser checks exercise these flows.
+  semantic_ac_key: ac_63bdacff4f78d2c5
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/browser-ui.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/browser-ui.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+- description: The delivered static application works under /physics-misconception-lab/
+    using relative URLs without a server or external runtime scripts, includes Korean
+    setup and usage documentation and a runnable test script, and supplies a GitHub
+    Pages Actions workflow that publishes only application assets; original files
+    are preserved and this job performs no push or deployment.
+  semantic_ac_key: ac_5bd12eb9707cfdd8
+  verify_command: /Users/kanghyeonseo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+    --test outputs/physics-lab/tests/pages-delivery.test.mjs
+  expected_artifacts:
+  - outputs/physics-lab/tests/pages-delivery.test.mjs
+  - outputs/physics-lab/tests/helpers.mjs
+  - outputs/physics-lab/scripts.mjs
+  - outputs/physics-lab/package.json
+assumptions:
+- Default educational level is university general physics.
+- Mock network and browser tests suffice without a real API key. Live diagnostic quality
+  is explicitly unverified.
+- 'Uploads: maximum 8 images total, 10 MiB each and 24 MiB combined; longest edge
+  2400 pixels.'
+open_questions: []
+ontology_schema:
+  name: PhysicsMisconceptionLearningSession
+  description: A learner's problem and solution submission, transient API configuration,
+    evidence-based Korean diagnosis, guided hints, retry attempt, optional teacher
+    review, and privacy-filtered export.
+  fields:
+  - name: problem
+    type: object
+    description: Problem text and supported image attachments, with optional teacher
+      rubric or reference.
+    required: true
+  - name: solution
+    type: object
+    description: Separate handwritten solution attachments and optional typed solution.
+    required: true
+  - name: attachments
+    type: array
+    description: Images with input role, format, size, preview, and resized representation;
+      contents are untrusted data.
+    required: true
+  - name: apiConfiguration
+    type: object
+    description: Editable model and transient personal API key held only in memory
+      and excluded from serialization.
+    required: true
+  - name: analysisState
+    type: string
+    description: Current input, loading, completed, cancelled, or error state.
+    required: true
+  - name: diagnosis
+    type: object
+    description: Korean transcription, correct parts, evidence-linked findings, confidence,
+      and any abstention.
+    required: true
+  - name: findings
+    type: array
+    description: Conceptual, algebra, unit, or omission findings supported by quotations
+      or locations, including force-role reasoning when relevant.
+    required: true
+  - name: hints
+    type: array
+    description: Three hints revealed progressively.
+    required: true
+  - name: referenceSolution
+    type: string
+    description: Optional full solution revealed at the learner's request.
+    required: true
+  - name: retry
+    type: object
+    description: Generated retry question, learner answer, and API-based answer recheck.
+    required: true
+  - name: teacherReview
+    type: object
+    description: Optional acceptance or correction of the diagnosis.
+    required: true
+  - name: usage
+    type: object
+    description: Actual token usage returned by the API, when available.
+    required: true
+  - name: syntheticProvenance
+    type: object
+    description: Explicit synthetic labeling for the local demo and any optional imported
+      cases.
+    required: true
+  - name: exportPreview
+    type: object
+    description: Content proposed for JSON or print export with keys and images excluded
+      and identifying text minimized where possible.
+    required: true
+evaluation_principles:
+- name: Diagnostic correctness and grounding
+  description: Evaluate Korean feedback against problem and solution evidence, error-category
+    distinctions, force-role reasoning, and appropriate uncertainty or abstention.
+  weight: 0.3
+- name: Privacy and request integrity
+  description: Verify memory-only key handling, direct documented multimodal requests,
+    strict validation, attachment distrust, and privacy-filtered exports.
+  weight: 0.25
+- name: Learning usability
+  description: Evaluate accessible responsive Korean interaction, progressive hints,
+    retry learning, and optional teacher correction.
+  weight: 0.2
+- name: Honest behavior and verification
+  description: Require meaningful targeted unit/mock and browser evidence, truthful
+    error and usage reporting, explicit synthetic provenance, and clear separation
+    of mocked from live verification.
+  weight: 0.15
+- name: Delivery readiness
+  description: Evaluate static subpath compatibility, Korean documentation, asset-only
+    Pages workflow, preservation of original files, and absence of unauthorized publication.
+  weight: 0.1
+exit_conditions:
+- name: Verified implementation
+  criteria: All ten targeted commands and the full project test runner pass; no paid
+    request or publication occurs.
+metadata:
+  seed_id: physics_lab_corrected
+  version: 2.0.0
+  reference_seed: seed_6d365af0a892
+  unresolved_slots: []

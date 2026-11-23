@@ -1,0 +1,20 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {browser,fill,envelope,until} from './helpers.mjs';
+import {selectMemories} from '../assets/memory.mjs';
+test('reference retrieval is bounded and excludes unrelated text',()=>{const rows=Array.from({length:5},(_,i)=>({topic:'책 중력 수직항력 평형',id:String(i)}));assert.equal(selectMemories(rows,'책 중력과 수직항력').length,3);assert.equal(selectMemories(rows,'열기관 효율 엔트로피').length,0);assert.equal(selectMemories(rows,'').length,3);});
+test('approved corrections persist without key/photos, affect future request, opt-out and delete work',async t=>{
+ const {page}=await browser(t);let payload;
+ await page.route('https://api.openai.com/v1/responses',r=>{payload=r.request().postDataJSON();return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(envelope())});});
+ await fill(page);await page.locator('#analyze').click();await until(page,'분석을 마쳤');
+ assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage)),[]);
+ await page.locator('#review-status').selectOption('corrected');await page.locator('#review-correction').fill('책의 중력과 수직항력은 평형력이다. test-personal-secret');
+ await page.locator('#memory-draft').click();assert.match(await page.locator('#memory-correction').inputValue(),/평형력/);assert.doesNotMatch(await page.locator('#memory-correction').inputValue(),/test-personal-secret/);
+ await page.locator('#memory-save').click();assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage)),[]);
+ await page.locator('#memory-topic').fill('책의 힘과 중력 수직항력 평형');await page.locator('#memory-correction').fill('책의 중력과 수직항력은 평형력이다. API 키 test-personal-secret');await page.locator('#memory-consent').check();await page.locator('#memory-save').click();
+ const stored=await page.evaluate(()=>JSON.stringify(localStorage));assert.doesNotMatch(stored,/test-personal-secret|data:image|Authorization/);assert.match(stored,/평형력/);
+ await page.reload();assert.equal(await page.locator('#api-key').inputValue(),'');assert.equal(await page.locator('#memory-list article').count(),1);
+ await fill(page);await page.locator('#analyze').click();await until(page,'분석을 마쳤');assert.match(payload.input[0].content[0].text,/과거 교정 사례/);assert.match(payload.input[0].content[0].text,/평형력/);
+ await page.locator('#memory-use').uncheck();await page.locator('#analyze').click();await until(page,'분석을 마쳤');assert.doesNotMatch(payload.input[0].content[0].text,/과거 교정 사례/);
+ await page.getByRole('button',{name:'이 기억 삭제'}).click();assert.equal(await page.locator('#memory-list article').count(),0);await page.reload();assert.equal(await page.locator('#memory-list article').count(),0);
+});
+test('saved memory is rendered as text, not executable HTML',async t=>{const {page}=await browser(t);await page.evaluate(()=>localStorage.setItem('physics-lab-reviewed-cases-v1',JSON.stringify([{id:'x',topic:'<img src=x onerror="window.bad=true">',correction:'<script>window.bad=true</script>',savedAt:''}])));await page.reload();assert.equal(await page.locator('#memory-list img,#memory-list script').count(),0);assert.equal(await page.evaluate(()=>window.bad),undefined);});

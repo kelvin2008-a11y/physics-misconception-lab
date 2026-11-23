@@ -1,0 +1,1 @@
+{"name":"physics-misconception-lab","private":true,"type":"module","scripts":{"test":"node scripts.mjs test","build":"node scripts.mjs build"},"devDependencies":{"playwright":"1.56.1"}}
