@@ -90,8 +90,8 @@ export function validateEvidence(d,input){
     if(!normalize(f.evidence)||!normalize(source).includes(normalize(f.evidence)))throw Error('오류 근거 인용이 풀이 또는 이미지 전사와 일치하지 않습니다. 원문을 확인해 주세요.');
   }
 }
-export async function requestDiagnosis(input,key,{signal,fetcher=fetch}={}) {
-  if(!key.trim()) throw Error('개인 API 키를 입력해 주세요.');
+export async function requestDiagnosis(input,key,{signal,fetcher=fetch,backendUrl=''}={}) {
+  if(!key.trim()) return requestSharedDiagnosis(input,{signal,fetcher,backendUrl});
   const body=buildRequest(input);
   let r;try { r=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key.trim()}`},body:JSON.stringify(body),signal}); }
   catch(e) { if(e.name==='AbortError') throw Error('요청을 취소했습니다.'); throw Error('네트워크 연결에 실패했습니다. 수동으로 다시 시도해 주세요.'); }
@@ -114,3 +114,14 @@ export function exportReport(d,review,source,key='') {
 }
 
 export function redactTree(value,key=''){if(typeof value==='string')return redact(value,key);if(Array.isArray(value))return value.map(v=>redactTree(v,key));if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[redact(k,key),redactTree(v,key)]));return value;}
+
+export async function requestSharedDiagnosis(input,{signal,fetcher=fetch,backendUrl='' }={}) {
+  let url;try{url=new URL(backendUrl);if(!['https:','http:'].includes(url.protocol)||url.username||url.password||url.search||url.hash)throw Error();}catch{throw Error('개인 API 키를 입력하거나 공용 분석 서버 URL을 설정해 주세요.');}
+  buildRequest({...input,model:undefined});
+  const body={problem:input.problem||'',solution:input.solution||'',rubric:input.rubric||'',images:(input.images||[]).map(({role,data})=>({role,data})),retry:input.retry||null};
+  let r;try{r=await fetcher(new URL('/api/diagnose',url),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal,credentials:'omit',referrerPolicy:'no-referrer'});}catch{throw Error(signal?.aborted?'요청을 취소했습니다.':'공용 서버에 연결하지 못했습니다.');}
+  if(!r.ok)throw Error(({400:'입력을 확인해 주세요.',401:'서버 API 키 인증에 실패했습니다. 운영자가 키의 유효·폐기 상태를 확인해야 합니다.',403:'서버의 접근 또는 모델 권한을 확인해 주세요.',413:'이미지 크기를 줄여 주세요.',429:'공용 요청 한도 초과 (429)',504:'공용 서버 응답 시간이 초과되었습니다.'})[r.status]||'공용 분석 서버를 사용할 수 없습니다.');
+  let result;try{result=await r.json();}catch{throw Error('응답 JSON 형식 오류');}
+  if(signal?.aborted)throw Error('요청을 취소했습니다.');
+  validateDiagnosis(result.diagnosis);validateEvidence(result.diagnosis,input);return result;
+}

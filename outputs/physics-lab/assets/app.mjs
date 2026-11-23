@@ -1,4 +1,4 @@
-import {DEFAULT_API_KEY} from './config.mjs';
+import {DEFAULT_API_KEY,BACKEND_URL} from './config.mjs';
 import {initMemory} from './memory.mjs';
 import {checkFiles,prepareImage,requestDiagnosis,demo,exportReport,redact,redactTree} from './core.mjs';
 const $=id=>document.getElementById(id);
@@ -33,7 +33,7 @@ function show(d,origin,usage=null){diagnosis=d;source=origin;hints=0;$('empty').
 async function run(retry=false){if(busy||processing)return;busy=true;controller=new AbortController();locks();status(retry?'재도전 답안을 확인하는 중입니다…':'풀이를 읽고 근거를 확인하는 중입니다…','loading');
  try{let input;if(retry){if(!diagnosis||!$('retry-answer').value.trim())throw Error('재도전 답안을 입력해 주세요.');input={problem:diagnosis.retryQuestion,solution:$('retry-answer').value,images:[],retry:{question:diagnosis.retryQuestion},model:$('model').value};$('retry-result').replaceChildren();}else{resetResult();input={problem:$('problem').value,solution:$('solution').value,rubric:$('rubric').value,images:[...images],model:$('model').value};}
  input.rubric=(input.rubric||'')+learningMemory.context(input.problem);
- const {diagnosis:d,usage}=await requestDiagnosis(input,$('api-key').value,{signal:controller.signal});
+ const {diagnosis:d,usage}=await requestDiagnosis(input,$('api-key').value,{signal:controller.signal,backendUrl:BACKEND_URL});
  if(retry){drawDiagnosis($('retry-result'),d);if(usage)$('retry-result').append(node('p',`실제 API 토큰 합계 ${usage.total_tokens}`));}else show(d,'개인 자료 · API 진단 (교사 확인 권장)',usage);
  status(d.status==='abstain'?'자료가 부족하여 판단을 보류했습니다. 추가 자료를 확인해 주세요.':'분석을 마쳤습니다. 근거와 힌트를 확인하세요.','success');
  }catch(e){status(e.message,'error');if(retry)$('retry-result').replaceChildren(node('p',e.message));}finally{busy=false;controller=null;locks();}}
@@ -52,7 +52,7 @@ let library=null,visibleCases=[];
 function filterCases(){const selected=$('preset').value;const preset=selected===''?null:library.presets[Number(selected)];visibleCases=library.cases.filter(c=>(!preset||(c.homework===preset.homework&&c.question_number===preset.question_number))&&(!$('focus-only').checked||c.focus));$('case-select').replaceChildren(...visibleCases.map((c,i)=>{const o=node('option',`과제 ${c.homework} · ${c.question_number}번 / ${c.subpart} · ${c.style} · ${c.error_type}`);o.value=i;return o;}));caseDetail();}
 function caseDetail(){const c=visibleCases[Number($('case-select').value)];$('case-detail').replaceChildren();$('load-case').disabled=!c||busy||processing;if(c)$('case-detail').append(node('p',c.problem),node('h3','합성 풀이'),node('p',c.wrong_solution),node('p','개념 점검: '+c.error_cause),node('p','힌트: '+c.correction_hint));else $('case-detail').append(node('p','이 조건에 해당하는 합성 사례가 없습니다.'));}
 $('preset').onchange=filterCases;$('focus-only').onchange=filterCases;$('case-select').onchange=caseDetail;
-$('load-case').onclick=()=>{const c=visibleCases[Number($('case-select').value)];if(!c)return;images=[];previews();$('problem').value=c.problem;$('solution').value=c.wrong_solution;const preset=library.presets.find(p=>p.homework===c.homework&&p.question_number===c.question_number);$('rubric').value=preset?'정답 기준: '+preset.reference+'\n채점 참고: '+preset.rubric:'';resetResult();status('합성 사례를 입력했습니다. 분석 버튼은 개인 키로 실제 API를 호출합니다.');$('workspace').scrollIntoView({behavior:'smooth'});};
+$('load-case').onclick=()=>{const c=visibleCases[Number($('case-select').value)];if(!c)return;images=[];previews();$('problem').value=c.problem;$('solution').value=c.wrong_solution;const preset=library.presets.find(p=>p.homework===c.homework&&p.question_number===c.question_number);$('rubric').value=preset?'정답 기준: '+preset.reference+'\n채점 참고: '+preset.rubric:'';resetResult();status('합성 사례를 입력했습니다. 분석 버튼은 공용 서버 또는 입력한 개인 키로 API를 호출합니다.');$('workspace').scrollIntoView({behavior:'smooth'});};
 fetch(new URL('./cases.json',import.meta.url)).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{library=data;for(const [i,p] of library.presets.entries()){const o=node('option',`과제 ${p.homework} · ${p.question_number}번`);o.value=i;$('preset').append(o);}filterCases();}).catch(()=>{$('case-detail').textContent='합성 자료를 불러오지 못했습니다. 페이지를 다시 열어 주세요.';$('load-case').disabled=true;});
 
 const learningMemory=initMemory({getKey:()=>$('api-key').value,getDraft:()=>diagnosis?{topic:$('problem').value.trim()||diagnosis.transcription,correction:$('review-status').value==='corrected'?$('review-correction').value:diagnosis.referenceSolution}:null,setStatus:status});
