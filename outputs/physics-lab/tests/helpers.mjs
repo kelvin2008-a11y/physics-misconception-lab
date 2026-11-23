@@ -18,6 +18,7 @@ export async function browser(t){
  let b;try{b=await chromium.launch({headless:true});}catch(e){server.close();throw e;}
  const context=await b.newContext({acceptDownloads:true});const page=await context.newPage();page.setDefaultTimeout(10000);
  t.after(async()=>{await context.close();await b.close();await new Promise(r=>server.close(r));});
+ await page.route('**/assets/config.mjs',r=>r.fulfill({contentType:'text/javascript',body:"export const DEFAULT_API_KEY='';export const BACKEND_URL='';"}));
  await page.goto(`http://127.0.0.1:${server.address().port}/physics-misconception-lab/`);
  return {page,context};
 }
