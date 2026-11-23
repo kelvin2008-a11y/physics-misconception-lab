@@ -83,6 +83,6 @@ Node 22 전용 무의존성 HTTP 서버는 `server/server.mjs`입니다. 저장�
 비교과지니 하위 페이지는 [원본 bgg-gini의 dist/index.html](https://github.com/kelvin2008-a11y/bgg-gini/blob/916f040fbbae9866e8d2eb15cc1309056c1291d6/dist/index.html)을 통합했습니다. 원본 커밋: `916f040fbbae9866e8d2eb15cc1309056c1291d6`. 원본 프로그램 목록 갱신은 유지하고, AI 추천만 같은 Render 서버의 `/api/bgg-recommend`에서 OpenAI로 처리합니다. 두 AI 경로는 공용 요청 한도를 함께 사용합니다.
 
 ## 물리 심층 분석 (2026-11-23)
-공용 물리 분석은 GPT-6.2 Astra, reasoning effort high, 추론 포함 최대 출력 16,000토큰, 최대 대기 240초를 사용합니다. 비교과지니는 GPT-6.1 Terra를 유지합니다. 완성된 응답의 토큰 수로 입력 $8/백만·출력 $40/백만 기준 예상 비용을 표시합니다(캐시 할인 제외). 월 $27은 계획 예산이며 서버의 월별 결제 차단 기능은 아닙니다. 실제 청구는 OpenAI 사용량 화면을 기준으로 합니다. 사진·추론 토큰, 실패/취소된 요청에도 비용이 발생할 수 있습니다. 자동 재시도나 저가 모델로의 자동 전환은 없습니다.
-공식 모델: https://developers.openai.com/api/docs/models/gpt-6.2-astra
-공식 요금: https://developers.openai.com/api/docs/pricing
+사용자 지정에 따라 GPT-6.1 Terra를 고정 사용합니다. reasoning effort high, 추론 포함 최대 출력 16,000토큰, 최대 대기 240초입니다. 계산·단위·힘 방향·보존 조건을 교차 점검하고 최초 오류와 파생 오류를 구분합니다. 비교과지니의 기존 모델과 출력 설정은 유지합니다.
+완성된 물리 응답의 토큰 수로 입력 $1/백만·출력 $5/백만 기준 예상 비용을 표시합니다(캐시 할인 제외). 예를 들어 입력 5,000·추론 포함 출력 10,000토큰은 약 $0.055로, $27로 약 490회입니다. 사진·문제 난도·추론 길이에 따라 달라집니다. 월 $27은 계획 예산이며 서버의 월별 결제 차단 기능은 아닙니다. 실제 청구는 OpenAI 사용량 화면을 기준으로 합니다. 실패/취소된 요청에도 비용이 발생할 수 있습니다. 자동 재시도나 모델 전환은 없습니다.
+공식 모델·단가: https://developers.openai.com/api/docs/models/gpt-6.1-terra

@@ -3,7 +3,7 @@ import {createServer} from 'node:http';
 import {pathToFileURL} from 'node:url';
 import {buildRequest,parseResponse,validateEvidence} from '../assets/core.mjs';
 
-export const MODEL='gpt-6.2-astra';
+export const MODEL='gpt-6.1-terra';
 export const BGG_MODEL='gpt-6.1-terra';
 export function physicsRequest(input){
  const request=buildRequest({...input,model:MODEL});
@@ -73,7 +73,7 @@ export function createDiagnosisServer({apiKey=process.env.OPENAI_API_KEY,allowed
    const response=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+apiKey.trim()},body:JSON.stringify(isBgg?bggRequest(input,BGG_MODEL):physicsRequest(input)),signal:controller.signal});
    const raw=await upstreamJSON(response);
    const result=isBgg?parseBgg(raw,input):parseResponse(raw);if(!isBgg)validateEvidence(result.diagnosis,input);
-   send(200,isBgg?result:{...result,analysis:{model:MODEL,reasoning:'high',estimatedCostUsd:result.usage?(result.usage.input_tokens*8+result.usage.output_tokens*40)/1e6:null}});
+   send(200,isBgg?result:{...result,analysis:{model:MODEL,reasoning:'high',estimatedCostUsd:result.usage?(result.usage.input_tokens*1+result.usage.output_tokens*5)/1e6:null}});
   }catch(e){const status=controller.signal.aborted?504:([400,401,403,413,429,502].includes(e.status)?e.status:502);send(status,{error:({400:isBgg?'Invalid recommendation input':'Invalid diagnosis input',401:'Shared API credential rejected',403:'Shared model access denied',413:'Input too large',429:'Shared request limit reached',502:isBgg?'Recommendation service unavailable':'Diagnosis service unavailable',504:'Request timed out'})[status]});}
   finally{clearTimeout(timer);clearTimeout(upstreamTimer);active--;res.off('close',disconnected);}
  });

@@ -21,7 +21,7 @@ test('HTTP fixed contract, images, retry, no secrets in output',async t=>{
   assert.ok(!(await r.text()).includes('test-server-secret'));
   const call=calls.at(-1),request=JSON.parse(call.body);
   assert.equal(call.url,'https://api.openai.com/v1/responses');assert.equal(call.headers.Authorization,'Bearer test-server-secret');
-  assert.equal(request.model,MODEL);assert.equal(request.instructions,physicsRequest(input()).instructions);assert.deepEqual(request.reasoning,{effort:'high'});assert.equal(request.max_output_tokens,16000);assert.deepEqual(request.text.format.schema,schema);assert.equal(request.store,false);
+  assert.equal(MODEL,'gpt-6.1-terra');assert.equal(request.model,MODEL);assert.equal(request.instructions,physicsRequest(input()).instructions);assert.deepEqual(request.reasoning,{effort:'high'});assert.equal(request.max_output_tokens,16000);assert.deepEqual(request.text.format.schema,schema);assert.equal(request.store,false);
  }
  assert.equal(JSON.parse(calls[1].body).input[0].content[2].type,'input_image');
 });

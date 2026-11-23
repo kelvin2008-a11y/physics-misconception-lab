@@ -35,7 +35,7 @@ async function run(retry=false){if(busy||processing)return;busy=true;controller=
  input.rubric=(input.rubric||'')+learningMemory.context(input.problem);
  const {diagnosis:d,usage,analysis}=await requestDiagnosis(input,$('api-key').value,{signal:controller.signal,backendUrl:BACKEND_URL});
  if(retry){drawDiagnosis($('retry-result'),d);if(usage)$('retry-result').append(node('p',`실제 API 토큰 합계 ${usage.total_tokens}`));}else show(d,'개인 자료 · API 진단 (교사 확인 권장)',usage);
- if(analysis?.model==='gpt-6.2-astra' && Number.isFinite(analysis.estimatedCostUsd))$(retry?'retry-result':'diagnosis').append(node('p',`GPT‑6.2 Astra · 심층 분석 · 이번 요청 예상 $${analysis.estimatedCostUsd.toFixed(4)} (캐시 할인 제외, 실제 청구와 다를 수 있음)`,'muted'));
+ if(typeof analysis?.model==='string' && Number.isFinite(analysis.estimatedCostUsd))$(retry?'retry-result':'diagnosis').append(node('p',`사용 모델 ${analysis.model} · 심층 분석 · 이번 요청 예상 $${analysis.estimatedCostUsd.toFixed(4)} (캐시 할인 제외, 실제 청구와 다를 수 있음)`,'muted'));
  status(d.status==='abstain'?'자료가 부족하여 판단을 보류했습니다. 추가 자료를 확인해 주세요.':'분석을 마쳤습니다. 근거와 힌트를 확인하세요.','success');
  }catch(e){status(e.message,'error');if(retry)$('retry-result').replaceChildren(node('p',e.message));}finally{busy=false;controller=null;locks();}}
 $('retry-answer').oninput=()=>{$('retry-result').replaceChildren();};
